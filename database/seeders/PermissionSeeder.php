@@ -56,6 +56,10 @@ class PermissionSeeder extends Seeder
                 ->get(),
         );
 
+        Role::findOrCreate('super-admin', 'web');
+        Role::findOrCreate('vendedor', 'web');
+        Role::findOrCreate('cliente', 'web');
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }
