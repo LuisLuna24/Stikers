@@ -5,13 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['name', 'description', 'image_url', 'is_active'])]
-class StickerFinish extends Model
+#[Fillable(['name', 'description', 'is_active'])]
+class StickerFinish extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('image')->singleFile();
     }
 
     public function variants(): HasMany

@@ -1,3 +1,3 @@
 <x-layouts::app :title="__('Acabados')">
-    <h1>Acabados</h1>
+    @livewire('modules.catalogs.finishes')
 </x-layouts::app>
