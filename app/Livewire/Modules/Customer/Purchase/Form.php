@@ -6,6 +6,7 @@ use App\Models\Design;
 use App\Models\DesignVariant;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\StickerFinish;
 use Flux\Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -65,7 +66,12 @@ class Form extends Component
         $this->cart[$variantId] = $newQuantity;
         $this->persistCart();
         $this->resetErrorBag('cart');
-        Flux::toast(variant: 'success', heading: 'Agregado al carrito', text: $variant->design->name.' ya está en tu resumen.');
+
+        $dimensions = $variant->stickerSize->width_cm.' × '.$variant->stickerSize->height_cm.' cm';
+        $toastText = "Agregaste {$quantity} × {$variant->design->name} ({$dimensions}, {$variant->stickerFinish->name})";
+
+        $this->dispatch('cart-updated', count: count($this->cart));
+        Flux::toast(variant: 'success', heading: 'Agregado al carrito', text: $toastText);
     }
 
     public function updateCartQuantity(int $variantId, mixed $quantity): void
@@ -192,20 +198,26 @@ class Form extends Component
             ->with(['variants' => fn ($query) => $query->active()
                 ->whereHas('stickerSize', fn ($sizeQuery) => $sizeQuery->where('is_active', true))
                 ->whereHas('stickerFinish', fn ($finishQuery) => $finishQuery->where('is_active', true))
-                ->with(['stickerSize', 'stickerFinish'])])
+                ->with(['stickerSize', 'stickerFinish.media'])])
             ->orderBy('name')
             ->get();
 
         $catalogData = $designs->mapWithKeys(fn (Design $design): array => [
             $design->id => [
+                'design_name' => $design->name,
+                'sku' => $design->sku,
                 'variants' => $design->variants->map(fn (DesignVariant $variant): array => [
                     'id' => $variant->id,
                     'size_id' => $variant->sticker_size_id,
                     'size_name' => $variant->stickerSize->name,
                     'size_dimensions' => $variant->stickerSize->width_cm.' × '.$variant->stickerSize->height_cm.' cm',
+                    'width_cm' => (float) $variant->stickerSize->width_cm,
+                    'height_cm' => (float) $variant->stickerSize->height_cm,
                     'finish_id' => $variant->sticker_finish_id,
                     'finish_name' => $variant->stickerFinish->name,
                     'finish_description' => $variant->stickerFinish->description,
+                    'finish_image_url' => $this->finishImageUrl($variant->stickerFinish),
+                    'finish_dot_class' => $this->finishDotClass($variant->sticker_finish_id),
                     'price' => (float) $variant->unit_price,
                     'minimum_quantity' => $variant->minimum_quantity,
                     'quantity_increment' => $variant->quantity_increment,
@@ -213,12 +225,15 @@ class Form extends Component
                 'sizes' => $design->variants->map(fn (DesignVariant $variant): array => [
                     'id' => $variant->sticker_size_id,
                     'name' => $variant->stickerSize->name,
+                    'width_cm' => (float) $variant->stickerSize->width_cm,
+                    'height_cm' => (float) $variant->stickerSize->height_cm,
                     'dimensions' => $variant->stickerSize->width_cm.' × '.$variant->stickerSize->height_cm.' cm',
                 ])->unique('id')->values()->all(),
                 'finishes' => $design->variants->map(fn (DesignVariant $variant): array => [
                     'id' => $variant->sticker_finish_id,
                     'name' => $variant->stickerFinish->name,
                     'description' => $variant->stickerFinish->description,
+                    'dot_class' => $this->finishDotClass($variant->sticker_finish_id),
                 ])->unique('id')->values()->all(),
             ],
         ])->all();
@@ -356,5 +371,26 @@ class Form extends Component
         return Str::startsWith($url, ['http://', 'https://'])
             ? $url
             : Storage::disk('public')->url($url);
+    }
+
+    private function finishImageUrl(StickerFinish $finish): ?string
+    {
+        $mediaUrl = $finish->getFirstMediaUrl('image');
+
+        if (filled($mediaUrl)) {
+            return $mediaUrl;
+        }
+
+        return $this->previewUrl($finish->image_url);
+    }
+
+    private function finishDotClass(int $finishId): string
+    {
+        return match ($finishId % 4) {
+            0 => 'bg-violet-400',
+            1 => 'bg-sky-400',
+            2 => 'bg-pink-400',
+            default => 'bg-zinc-400',
+        };
     }
 }
