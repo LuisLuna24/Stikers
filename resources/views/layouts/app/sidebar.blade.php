@@ -28,14 +28,22 @@
                     :current="request()->routeIs('admin.stikers.index')" wire:navigate>
                     {{ __('Stikers') }}
                 </flux:sidebar.item>
+                @hasanyrole('admin|vendedor|super-admin')
+                    <flux:sidebar.item icon="document-text" :href="route('admin.design-requests.index')"
+                        :current="request()->routeIs('admin.design-requests.index')" wire:navigate>
+                        {{ __('Solicitudes de diseño') }}
+                    </flux:sidebar.item>
+                @endhasanyrole
+                @role('cliente')
+                    <flux:sidebar.item icon="shopping-bag" :href="route('customer.catalog')"
+                        :current="request()->routeIs('customer.catalog')" wire:navigate>
+                        {{ __('Catálogo') }}
+                    </flux:sidebar.item>
+                @endrole
                 <flux:sidebar.group icon="book-open" heading="Catalogos" class="grid">
                     <flux:sidebar.item icon="chart-bar" :href="route('admin.catalogs.sizes')"
                         :current="request()->routeIs('admin.catalogs.sizes')" wire:navigate>
                         {{ __('Medidas') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="swatch" :href="route('admin.catalogs.finishes')"
-                        :current="request()->routeIs('admin.catalogs.finishes')" wire:navigate>
-                        {{ __('Acabados') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
                 <flux:sidebar.group icon="users" heading="Clientes" class="grid">

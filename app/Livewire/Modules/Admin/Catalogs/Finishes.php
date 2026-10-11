@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Modules\Catalogs;
+namespace App\Livewire\Modules\Admin\Catalogs;
 
 use App\Models\StickerFinish;
 use Illuminate\Validation\Rule;
@@ -130,6 +130,6 @@ class Finishes extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.modules.catalogs.finishes', compact('finishes'));
+        return view('livewire.modules.admin.catalogs.finishes', compact('finishes'));
     }
 }

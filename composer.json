@@ -19,7 +19,7 @@
         "livewire/livewire": "^4.1",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-permission": "^8.3",
-        "wireui/wireui": "^2.6"
+        "wireui/wireui": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Modules\Catalogs;
+namespace App\Livewire\Modules\Admin\Catalogs;
 
 use App\Models\StickerSize;
 use Illuminate\Validation\Rule;
@@ -56,7 +56,7 @@ class Sizes extends Component
         $size->update(['is_active' => ! $size->is_active]);
         $status = $size->is_active ? 'activo' : 'inactivo';
 
-        Flux::toast(variant: 'success',heading: 'Estatus actualizado',  text: 'El tamaño ahora está '. $status . '.');
+        Flux::toast(variant: 'success', heading: 'Estatus actualizado',  text: 'El tamaño ahora está ' . $status . '.');
     }
 
     public function save(): void
@@ -93,7 +93,7 @@ class Sizes extends Component
         $this->resetForm();
         $this->resetPage();
 
-        Flux::toast(variant: 'success',heading: 'Tamaño guardado',  text: 'El tamaño se guardó correctamente.');
+        Flux::toast(variant: 'success', heading: 'Tamaño guardado',  text: 'El tamaño se guardó correctamente.');
     }
 
     private function resetForm(): void
@@ -116,6 +116,6 @@ class Sizes extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.modules.catalogs.sizes', compact('sizes'));
+        return view('livewire.modules.admin.catalogs.sizes', compact('sizes'));
     }
 }

@@ -1,3 +1,3 @@
 <x-layouts::app :title="__('Medidas')">
-    @livewire('modules.catalogs.sizes')
+    @livewire('modules.admin.catalogs.sizes')
 </x-layouts::app>

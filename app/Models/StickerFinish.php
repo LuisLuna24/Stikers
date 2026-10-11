@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-#[Fillable(['name', 'description', 'is_active'])]
+#[Fillable(['design_id', 'name', 'description', 'is_active'])]
 class StickerFinish extends Model implements HasMedia
 {
     use InteractsWithMedia;
@@ -16,6 +17,11 @@ class StickerFinish extends Model implements HasMedia
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    public function design(): BelongsTo
+    {
+        return $this->belongsTo(Design::class);
     }
 
     public function registerMediaCollections(): void

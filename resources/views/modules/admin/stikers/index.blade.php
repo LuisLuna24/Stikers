@@ -1,3 +1,3 @@
 <x-layouts::app :title="__('Stikers')">
-    <h1>Stikers</h1>
+    @livewire('modules.admin.stikers.index')
 </x-layouts::app>
