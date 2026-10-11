@@ -242,84 +242,39 @@
 
             <section
                 class="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 p-5 dark:border-indigo-400/20 dark:bg-indigo-400/10">
-                <div class="flex items-center justify-between gap-3">
+                <div class="flex justify-between flex-col gap-3">
                     <div>
                         <h2 class="font-semibold text-zinc-950 dark:text-white">Registrar pago</h2>
                         <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Saldo disponible:
                             ${{ number_format((float) $order->balance_due, 2) }}</p>
-                    </div><flux:icon.plus-circle variant="mini" class="text-indigo-500" aria-hidden="true" />
-                </div><button type="button" wire:click="openPaymentModal" @disabled((float) $order->balance_due <= 0)
-                    class="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
-                    <flux:icon.plus variant="mini" aria-hidden="true" />Agregar pago
-                </button>
+                    </div>
+                    <x-w-button icon="plus-circle" wire:click="openPaymentModal" spinner class="w-full">Agregar
+                        pago
+                    </x-w-button>
+                </div>
+
             </section>
         </aside>
     </div>
 
-    @if ($showPaymentModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-zinc-950/50 p-4" role="dialog"
-            aria-modal="true" aria-labelledby="payment-modal-title" wire:keydown.escape="closePaymentModal">
-            <div
-                class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
-                <div class="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-700">
-                    <div>
-                        <h2 id="payment-modal-title" class="font-semibold text-zinc-950 dark:text-white">Registrar pago</h2>
-                        <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Saldo pendiente:
-                            ${{ number_format((float) $order->balance_due, 2) }}</p>
-                    </div><button type="button" wire:click="closePaymentModal" aria-label="Cerrar ventana"
-                        class="inline-flex size-10 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-zinc-800"><flux:icon.x-mark
-                            variant="mini" aria-hidden="true" /></button>
-                </div>
-                <form wire:submit="addPayment" class="space-y-4 p-5">
-                    <div><label for="payment-method"
-                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Método de
-                            pago</label><select id="payment-method" wire:model.live="paymentMethod"
-                            class="w-full rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800">
-                            <option value="bank_transfer">Transferencia</option>
-                            <option value="cash">Efectivo</option>
-                            <option value="other">Otro</option>
-                        </select></div>
-                    <div><label for="payment-amount"
-                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Monto</label>
-                        <div class="relative"><span
-                                class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-500">$</span><input
-                                id="payment-amount" type="number" step="0.01" min="0.01"
-                                max="{{ max(0, (float) $order->balance_due) }}" wire:model="paymentAmount"
-                                class="w-full rounded-lg border-zinc-300 bg-white pl-7 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-                                placeholder="0.00" /> </div>@error('paymentAmount')
-                                <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-                    </div>@if ($paymentMethod === 'other')
-                        <div><label for="other-method-name"
-                                class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">¿Cuál
-                                método?</label><input id="other-method-name" type="text" wire:model="otherMethodName"
-                                class="w-full rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800"
-                                placeholder="Ej. Tarjeta" />@error('otherMethodName')
-                                <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-                    </div>@endif<div><label for="payment-reference"
-                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Referencia <span
-                                class="font-normal text-zinc-500">(opcional)</span></label><input id="payment-reference"
-                            type="text" wire:model="paymentReference"
-                            class="w-full rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800"
-                            placeholder="Folio o referencia bancaria" />@error('paymentReference')
-                            <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div><label for="payment-note"
-                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Nota <span
-                                class="font-normal text-zinc-500">(opcional)</span></label><textarea id="payment-note"
-                            wire:model="paymentNote" rows="2"
-                            class="w-full rounded-lg border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800"
-                            placeholder="Observaciones del pago"></textarea>@error('paymentNote')
-                            <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end"><button type="button"
-                            wire:click="closePaymentModal"
-                            class="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-300 px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800">Cancelar</button><button
-                            type="submit" wire:loading.attr="disabled" wire:target="addPayment"
-                            class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"><span
-                                wire:loading.remove wire:target="addPayment">Guardar pago</span><span wire:loading
-                                wire:target="addPayment">Guardando...</span></button></div>
-                </form>
+    <x-w-modal-card title="Agregar pago" wire:model="showPaymentModal">
+        <form wire:submit="addPayment" class="space-y-4" x-data="{ paymentMethod: @entangle('paymentMethod') }">
+            <x-w-select wire:model.live="paymentMethod" label="Método de pago" placeholder="Selecciona un método"
+                :options="[['name' => 'Transferencia', 'id' => 'bank_transfer'], ['name' => 'Efectivo', 'id' => 'cash'], ['name' => 'Otro', 'id' => 'other'],]"option-label="name" option-value="id" />
+
+            <x-w-currency wire:model="paymentAmount" label="Monto" placeholder="Ej. 150.00" icon="currency-dollar"
+                thousands="," decimal="." precision="4" />
+
+            <template x-if="paymentMethod === 'other'">
+                <x-w-input wire:model="otherMethodName" label="¿Cuál método?" placeholder="Ej. Tarjeta" />
+            </template>
+
+            <x-w-input wire:model="paymentReference" label="Referencia" corner="opcional" placeholder="Ej. 123456" />
+            <x-w-textarea wire:model="paymentNote" label="Nota" corner="opcional" placeholder="Ej. 123456" />
+            <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <x-w-button wire:click="closePaymentModal" flat negative spinner>Cancelar</x-w-button>
+                <x-w-button wire:click="addPayment" spinner>Guardar pago</x-w-button>
             </div>
-        </div>
-    @endif
+        </form>
+    </x-w-modal-card>
 </div>

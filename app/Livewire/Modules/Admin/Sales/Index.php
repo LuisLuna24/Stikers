@@ -3,6 +3,8 @@
 namespace App\Livewire\Modules\Admin\Sales;
 
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
+use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,7 +14,7 @@ class Index extends Component
 
     public string $search = '';
 
-    public string $status = '';
+    public ?string $status = null;
 
     public function updatedSearch(): void
     {
@@ -24,8 +26,47 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function statusLabel(string $status): string
+    public function updateStatus(int $orderId, string $status): void
     {
+        $validStatuses = [
+            'pending_deposit',
+            'in_review',
+            'pending_customer_changes',
+            'awaiting_deposit',
+            'in_production',
+            'ready_for_pickup',
+            'delivered_balance_due',
+            'completed',
+            'cancelled',
+            'refunded',
+        ];
+
+        if (! in_array($status, $validStatuses, true)) {
+            return;
+        }
+
+        $order = Order::findOrFail($orderId);
+        $previousStatus = $order->status;
+
+        $order->update(['status' => $status]);
+
+        OrderStatusHistory::create([
+            'order_id' => $order->id,
+            'from_status' => $previousStatus,
+            'to_status' => $status,
+            'changed_by_user_id' => auth()->id(),
+            'created_at' => now(),
+        ]);
+
+        Flux::toast(variant: 'success', heading: 'Estado actualizado', text: 'El estado del pedido fue actualizado.');
+    }
+
+    public function statusLabel(?string $status): string
+    {
+        if (! $status) {
+            return 'Sin estado';
+        }
+
         return [
             'pending_deposit' => 'Anticipo pendiente',
             'in_review' => 'En revisión',
@@ -40,7 +81,7 @@ class Index extends Component
         ][$status] ?? str_replace('_', ' ', ucfirst($status));
     }
 
-    public function statusClasses(string $status): string
+    public function statusClasses(?string $status): string
     {
         return match ($status) {
             'completed', 'ready_for_pickup' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300',
@@ -66,21 +107,22 @@ class Index extends Component
                         });
                 });
             })
-            ->when($this->status !== '', fn($query) => $query->where('status', $this->status))
+            ->when(filled($this->status), fn($query) => $query->where('status', $this->status))
             ->latest('requested_at')
             ->paginate(10);
 
         $statusOptions = [
-            'pending_deposit' => 'Anticipo pendiente',
-            'in_review' => 'En revisión',
-            'pending_customer_changes' => 'Cambios del cliente',
-            'awaiting_deposit' => 'Esperando anticipo',
-            'in_production' => 'En producción',
-            'ready_for_pickup' => 'Lista para entrega',
-            'delivered_balance_due' => 'Entregada · saldo pendiente',
-            'completed' => 'Completada',
-            'cancelled' => 'Cancelada',
-            'refunded' => 'Reembolsada',
+            ['value' => '', 'label' => 'Todos los estados'],
+            ['value' => 'pending_deposit', 'label' => 'Anticipo pendiente'],
+            ['value' => 'in_review', 'label' => 'En revisión'],
+            ['value' => 'pending_customer_changes', 'label' => 'Cambios del cliente'],
+            ['value' => 'awaiting_deposit', 'label' => 'Esperando anticipo'],
+            ['value' => 'in_production', 'label' => 'En producción'],
+            ['value' => 'ready_for_pickup', 'label' => 'Lista para entrega'],
+            ['value' => 'delivered_balance_due', 'label' => 'Entregada · saldo pendiente'],
+            ['value' => 'completed', 'label' => 'Completada'],
+            ['value' => 'cancelled', 'label' => 'Cancelada'],
+            ['value' => 'refunded', 'label' => 'Reembolsada'],
         ];
 
         $summary = [
@@ -92,3 +134,4 @@ class Index extends Component
         return view('livewire.modules.admin.sales.index', compact('orders', 'statusOptions', 'summary'));
     }
 }
+

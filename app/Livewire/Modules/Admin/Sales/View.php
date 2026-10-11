@@ -45,8 +45,11 @@ class View extends Component
             'otherMethodName' => ['required_if:paymentMethod,other', 'nullable', 'string', 'max:80'],
             'paymentNote' => ['nullable', 'string', 'max:1000'],
         ], [
+            'paymentAmount.required' => 'El monto del pago es requerido.',
             'paymentAmount.max' => 'El pago no puede superar el saldo pendiente de $' . number_format($balanceDue, 2) . '.',
             'otherMethodName.required_if' => 'Indica el nombre del método de pago.',
+        ], [
+            'paymentAmount' => 'monto de pago'
         ]);
 
         DB::transaction(function () use ($validated): void {
@@ -79,10 +82,11 @@ class View extends Component
         Flux::toast(variant: 'success', heading: 'Pago registrado', text: 'El saldo de la venta fue actualizado.');
     }
 
+    public $showPaymentModal = false;
     public function openPaymentModal(): void
     {
         $this->resetValidation();
-        Flux::modal('payment-modal')->show();
+        $this->showPaymentModal = true;
     }
 
     public function closePaymentModal(): void
