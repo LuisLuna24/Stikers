@@ -22,8 +22,8 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
             <flux:sidebar.group :heading="__('Orders')" class="grid">
-                <flux:sidebar.item icon="shopping-cart" :href="route('customer.catalog')"
-                    :current="request()->routeIs('customer.catalog')" wire:navigate>
+                <flux:sidebar.item icon="shopping-cart" :href="route('customer.purchase.create')"
+                    :current="request()->routeIs('customer.purchase.*')" wire:navigate>
                     {{ __('Mis pedidos') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>

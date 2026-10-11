@@ -10,7 +10,7 @@
     }"
     x-on:notify-toast.window="showToast($event.detail.message)"
     x-on:keydown.escape.window="drawerOpen = false"
-    class="min-h-dvh bg-zinc-950 text-zinc-100">
+    class="min-h-dvh text-zinc-100">
 
     <div class="mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <!-- Header con título y acceso al carrito -->
@@ -384,8 +384,6 @@
                                                     <span class="size-2.5 shrink-0 rounded-full" x-bind:class="finish.dot_class" aria-hidden="true"></span>
                                                     <span class="text-xs font-semibold text-white" x-text="finish.name"></span>
                                                 </div>
-                                                <p class="mt-1 text-[11px] leading-snug text-zinc-400"
-                                                    x-text="getFinishDescription(finish)"></p>
                                             </div>
 
                                             <div class="mt-2.5 flex items-baseline justify-between border-t border-zinc-800/80 pt-2">
@@ -417,7 +415,7 @@
 
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                                     <!-- Control Stepper: botones >= 44x44px e input numérico centrado -->
-                                    <div class="flex items-center rounded-xl border border-zinc-800 bg-zinc-900/90 p-1">
+                                    <div class="w-full flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/90 p-1">
                                         <button type="button"
                                             x-on:click="decrementQuantity()"
                                             x-bind:disabled="Number(quantity) <= minQuantity()"
@@ -440,21 +438,6 @@
                                             aria-label="Aumentar cantidad">
                                             +
                                         </button>
-                                    </div>
-
-                                    <!-- Atajos rápidos (chips 5, 10, 25, 50 filtrados por >= mínimo) -->
-                                    <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Atajos rápidos de cantidad">
-                                        <template x-for="shortcut in [5, 10, 25, 50].filter(q => q >= minQuantity())" :key="shortcut">
-                                            <button type="button"
-                                                x-on:click="setQuantity(shortcut)"
-                                                x-bind:aria-pressed="Number(quantity) === Number(shortcut)"
-                                                x-bind:class="Number(quantity) === Number(shortcut)
-                                                    ? 'border-indigo-500 bg-indigo-600 font-bold text-white shadow-sm'
-                                                    : 'border-zinc-800 bg-zinc-900/90 font-medium text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800 hover:text-white'"
-                                                class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border px-3 text-xs tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
-                                                <span x-text="shortcut"></span>
-                                            </button>
-                                        </template>
                                     </div>
                                 </div>
 
