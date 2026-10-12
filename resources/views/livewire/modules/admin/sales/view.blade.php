@@ -46,7 +46,30 @@
             </p>
         </div>
     </div>
-
+    <section
+        class="overflow-hidden rounded-xl border border-zinc-200 bg-white px-5 py-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Siguiente paso</p>
+                <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                    {{ count($this->statusActions()) ? 'Actualiza el pedido cuando completes la actividad actual.' : 'Este pedido se encuentra en un estado final.' }}
+                </p>
+            </div>
+            @if (count($this->statusActions()))
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($this->statusActions() as $statusAction)
+                        <x-w-button
+                            wire:key="status-action-{{ $statusAction['value'] }}"
+                            wire:click="changeStatus('{{ $statusAction['value'] }}')"
+                            :negative="$statusAction['tone'] === 'negative'"
+                            spinner>
+                            {{ $statusAction['label'] }}
+                        </x-w-button>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </section>
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <section
             class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">

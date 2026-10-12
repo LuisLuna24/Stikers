@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Modules\Admin\Sales;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use Flux\Flux;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -28,35 +30,34 @@ class Index extends Component
 
     public function updateStatus(int $orderId, string $status): void
     {
-        $validStatuses = [
-            'pending_deposit',
-            'in_review',
-            'pending_customer_changes',
-            'awaiting_deposit',
-            'in_production',
-            'ready_for_pickup',
-            'delivered_balance_due',
-            'completed',
-            'cancelled',
-            'refunded',
-        ];
+        $nextStatus = OrderStatus::tryFromValue($status);
 
-        if (! in_array($status, $validStatuses, true)) {
+        if (! $nextStatus) {
             return;
         }
 
         $order = Order::findOrFail($orderId);
-        $previousStatus = $order->status;
+        $currentStatus = OrderStatus::tryFromValue($order->status);
 
-        $order->update(['status' => $status]);
+        if (! $currentStatus || ($nextStatus === OrderStatus::Cancelled
+            ? ! $currentStatus->canCancel()
+            : $currentStatus->next() !== $nextStatus)) {
+            Flux::toast(variant: 'warning', heading: 'Cambio no disponible', text: 'Ese pedido no puede pasar a ese estado desde su estado actual.');
 
-        OrderStatusHistory::create([
-            'order_id' => $order->id,
-            'from_status' => $previousStatus,
-            'to_status' => $status,
-            'changed_by_user_id' => auth()->id(),
-            'created_at' => now(),
-        ]);
+            return;
+        }
+
+        DB::transaction(function () use ($order, $currentStatus, $nextStatus): void {
+            $order->update(['status' => $nextStatus->value]);
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'from_status' => $currentStatus->value,
+                'to_status' => $nextStatus->value,
+                'changed_by_user_id' => auth()->id(),
+                'created_at' => now(),
+            ]);
+        });
 
         Flux::toast(variant: 'success', heading: 'Estado actualizado', text: 'El estado del pedido fue actualizado.');
     }
@@ -67,28 +68,81 @@ class Index extends Component
             return 'Sin estado';
         }
 
-        return [
-            'pending_deposit' => 'Anticipo pendiente',
-            'in_review' => 'En revisión',
-            'pending_customer_changes' => 'Cambios del cliente',
-            'awaiting_deposit' => 'Esperando anticipo',
-            'in_production' => 'En producción',
-            'ready_for_pickup' => 'Lista para entrega',
-            'delivered_balance_due' => 'Entregada · saldo pendiente',
-            'completed' => 'Completada',
-            'cancelled' => 'Cancelada',
-            'refunded' => 'Reembolsada',
-        ][$status] ?? str_replace('_', ' ', ucfirst($status));
+        return OrderStatus::tryFromValue($status)?->label() ?? str_replace('_', ' ', ucfirst($status));
     }
 
     public function statusClasses(?string $status): string
     {
-        return match ($status) {
-            'completed', 'ready_for_pickup' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300',
-            'in_production' => 'bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300',
-            'cancelled', 'refunded' => 'bg-rose-50 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300',
-            default => 'bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300',
+        return OrderStatus::tryFromValue($status)?->classes() ?? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200';
+    }
+
+    //!==============================================Acciones
+
+    public $actionsModal = false;
+    public $viewId;
+
+    public function openActionsModal($id)
+    {
+        $this->viewId = $id;
+        $this->actionsModal = true;
+    }
+
+    /** @return array<int, array{key: string, icon: string, title: string, desc: string, tone: string}> */
+    public function actionOptions(): array
+    {
+        $order = $this->viewId ? Order::find($this->viewId) : null;
+        $currentStatus = OrderStatus::tryFromValue($order?->status);
+        $nextStatus = $currentStatus?->next();
+        $actions = [[
+            'key' => 'view',
+            'icon' => 'eye',
+            'title' => 'Ver pedido',
+            'desc' => 'Consulta los detalles sin modificar nada',
+            'tone' => 'gray',
+        ]];
+
+        if ($nextStatus) {
+            $actions[] = [
+                'key' => 'next',
+                'icon' => 'arrow-right',
+                'title' => $currentStatus->actionLabel(),
+                'desc' => 'Avanza al siguiente paso del flujo',
+                'tone' => 'blue',
+            ];
+        }
+
+        return $actions;
+    }
+
+    public function canCancel(): bool
+    {
+        $order = $this->viewId ? Order::find($this->viewId) : null;
+        $currentStatus = OrderStatus::tryFromValue($order?->status);
+
+        return $currentStatus?->canCancel() ?? false;
+    }
+
+    public function selectAction(string $action): void
+    {
+        $this->actionsModal = false;
+
+        if ($action === 'view') {
+            $this->redirectRoute('admin.sales.view', ['id' => $this->viewId]);
+
+            return;
+        }
+
+        $order = Order::findOrFail($this->viewId);
+        $currentStatus = OrderStatus::tryFromValue($order->status);
+        $status = match ($action) {
+            'next' => $currentStatus?->next()?->value,
+            'cancel' => OrderStatus::Cancelled->value,
+            default => null,
         };
+
+        if ($status) {
+            $this->updateStatus((int) $this->viewId, $status);
+        }
     }
 
     public function render()
@@ -111,27 +165,18 @@ class Index extends Component
             ->latest('requested_at')
             ->paginate(10);
 
-        $statusOptions = [
-            ['value' => '', 'label' => 'Todos los estados'],
-            ['value' => 'pending_deposit', 'label' => 'Anticipo pendiente'],
-            ['value' => 'in_review', 'label' => 'En revisión'],
-            ['value' => 'pending_customer_changes', 'label' => 'Cambios del cliente'],
-            ['value' => 'awaiting_deposit', 'label' => 'Esperando anticipo'],
-            ['value' => 'in_production', 'label' => 'En producción'],
-            ['value' => 'ready_for_pickup', 'label' => 'Lista para entrega'],
-            ['value' => 'delivered_balance_due', 'label' => 'Entregada · saldo pendiente'],
-            ['value' => 'completed', 'label' => 'Completada'],
-            ['value' => 'cancelled', 'label' => 'Cancelada'],
-            ['value' => 'refunded', 'label' => 'Reembolsada'],
-        ];
+        $statusOptions = collect(OrderStatus::cases())
+            ->map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => $status->label()])
+            ->prepend(['value' => '', 'label' => 'Todos los estados'])
+            ->values()
+            ->all();
 
         $summary = [
             'total' => Order::count(),
             'production' => Order::where('status', 'in_production')->count(),
-            'pending' => Order::whereIn('status', ['pending_deposit', 'awaiting_deposit'])->count(),
+            'pending' => Order::where('status', OrderStatus::PendingDeposit->value)->count(),
         ];
 
         return view('livewire.modules.admin.sales.index', compact('orders', 'statusOptions', 'summary'));
     }
 }
-

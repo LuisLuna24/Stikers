@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Modules\Admin\Sales;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use Flux\Flux;
 use Illuminate\Support\Facades\DB;
@@ -126,40 +128,61 @@ class View extends Component
 
     public function statusLabel(): string
     {
-        return [
-            'pending_deposit' => 'Anticipo pendiente',
-            'in_review' => 'En revisión',
-            'pending_customer_changes' => 'Cambios del cliente',
-            'awaiting_deposit' => 'Esperando anticipo',
-            'in_production' => 'En producción',
-            'ready_for_pickup' => 'Lista para entrega',
-            'delivered_balance_due' => 'Entregada · saldo pendiente',
-            'completed' => 'Completada',
-            'cancelled' => 'Cancelada',
-            'refunded' => 'Reembolsada',
-        ][$this->order->status] ?? str_replace('_', ' ', ucfirst($this->order->status));
+        return OrderStatus::tryFromValue($this->order->status)?->label()
+            ?? str_replace('_', ' ', ucfirst($this->order->status));
     }
 
     public function statusClasses(): string
     {
-        return match ($this->order->status) {
-            'completed', 'ready_for_pickup' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300',
-            'in_production' => 'bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300',
-            'cancelled', 'refunded' => 'bg-rose-50 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300',
-            default => 'bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300',
-        };
+        return OrderStatus::tryFromValue($this->order->status)?->classes()
+            ?? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200';
     }
 
     public function statusDotClasses(): string
     {
-        return match ($this->order->status) {
-            'completed', 'ready_for_pickup' => 'bg-emerald-500',
-            'in_production' => 'bg-blue-500',
-            'cancelled', 'refunded' => 'bg-rose-500',
-            default => 'bg-amber-500',
-        };
+        return OrderStatus::tryFromValue($this->order->status)?->dotClasses() ?? 'bg-zinc-500';
     }
 
+    /** @return array<int, array{value: string, label: string, tone: string}> */
+    public function statusActions(): array
+    {
+        $currentStatus = OrderStatus::tryFromValue($this->order->status);
+
+        $nextStatus = $currentStatus?->next();
+
+        return $nextStatus ? [[
+            'value' => $nextStatus->value,
+            'label' => $currentStatus->actionLabel(),
+            'tone' => 'primary',
+        ]] : [];
+    }
+
+    public function changeStatus(string $status): void
+    {
+        $nextStatus = OrderStatus::tryFromValue($status);
+        $currentStatus = OrderStatus::tryFromValue($this->order->status);
+
+        if (! $nextStatus || ! $currentStatus || $currentStatus->next() !== $nextStatus) {
+            Flux::toast(variant: 'warning', heading: 'Cambio no disponible', text: 'Ese estado no corresponde al flujo actual del pedido.');
+
+            return;
+        }
+
+        DB::transaction(function () use ($currentStatus, $nextStatus): void {
+            $this->order->update(['status' => $nextStatus->value]);
+
+            OrderStatusHistory::create([
+                'order_id' => $this->order->id,
+                'from_status' => $currentStatus->value,
+                'to_status' => $nextStatus->value,
+                'changed_by_user_id' => auth()->id(),
+                'created_at' => now(),
+            ]);
+        });
+
+        $this->loadOrder($this->order->id);
+        Flux::toast(variant: 'success', heading: 'Estado actualizado', text: 'El pedido ahora está "' . $nextStatus->label() . '".');
+    }
     public function render()
     {
         return view('livewire.modules.admin.sales.view');

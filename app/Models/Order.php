@@ -29,11 +29,35 @@ class Order extends Model
         ];
     }
 
-    public function customer(): BelongsTo { return $this->belongsTo(CustomerProfile::class, 'customer_id'); }
-    public function shippingAddress(): BelongsTo { return $this->belongsTo(CustomerAddress::class, 'shipping_address_id'); }
-    public function items(): HasMany { return $this->hasMany(OrderItem::class); }
-    public function statusHistory(): HasMany { return $this->hasMany(OrderStatusHistory::class); }
-    public function payments(): HasMany { return $this->hasMany(Payment::class); }
-    public function designRequests(): HasMany { return $this->hasMany(DesignRequest::class, 'converted_order_id'); }
-    public function invoiceRequest(): HasOne { return $this->hasOne(OrderInvoiceRequest::class); }
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(CustomerProfile::class, 'customer_id');
+    }
+    public function shippingAddress(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAddress::class, 'shipping_address_id');
+    }
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class);
+    }
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+    public function designRequests(): HasMany
+    {
+        return $this->hasMany(DesignRequest::class, 'converted_order_id');
+    }
+    public function invoiceRequest(): HasOne
+    {
+        return $this->hasOne(OrderInvoiceRequest::class);
+    }
+
+    // Flujo normal: anticipo pendiente → revisión → producción → lista para entrega → entregada → completada.
+    // Cancelada y reembolsada son estados excepcionales, no pasos del flujo normal.
 }

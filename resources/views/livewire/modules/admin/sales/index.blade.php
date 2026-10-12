@@ -99,10 +99,9 @@
                                         class="size-1.5 rounded-full {{ $order->invoiceRequest ? 'bg-emerald-500' : 'bg-zinc-400' }}"
                                         aria-hidden="true"></span>{{ $order->invoiceRequest ? 'Solicitada' : 'No requerida' }}</span>
                             </td>
-                            <td class="whitespace-nowrap px-5 py-4 text-right"><a
-                                    href="{{ route('admin.sales.view', $order->id) }}" wire:navigate
-                                    class="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-indigo-300 dark:hover:bg-indigo-400/10">Ver
-                                    pedido <flux:icon.arrow-right variant="mini" aria-hidden="true" /></a></td>
+                            <td class="whitespace-nowrap px-5 py-4 text-right">
+                                <x-w-button label="Ver Pedido" wire:click="openActionsModal({{ $order->id }})"
+                                    color="gray" right-icon="arrow-right" />
                         </tr>
                     @empty
                         <tr>
@@ -111,8 +110,10 @@
                                     class="mx-auto flex size-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800">
                                     <flux:icon.shopping-bag variant="mini" aria-hidden="true" />
                                 </div>
-                                <p class="mt-4 font-medium text-zinc-900 dark:text-white">No hay pedidos que coincidan</p>
-                                <p class="mt-1 text-sm text-zinc-500">Prueba con otro cliente, número de pedido o estado.
+                                <p class="mt-4 font-medium text-zinc-900 dark:text-white">No hay pedidos que coincidan
+                                </p>
+                                <p class="mt-1 text-sm text-zinc-500">Prueba con otro cliente, número de pedido o
+                                    estado.
                                 </p>
                             </td>
                         </tr>
@@ -124,4 +125,66 @@
             <div class="border-t border-zinc-200 px-5 py-4 dark:border-zinc-700">{{ $orders->links() }}</div>
         @endif
     </section>
+
+    <x-w-modal-card title="¿Qué acción desea realizar?" wire:model="actionsModal" align="center">
+        <div class="-mx-2 divide-y divide-gray-100 dark:divide-gray-700">
+
+            {{-- Acciones normales --}}
+            <div class="space-y-1 pb-2">
+                @php
+                    $actions = $this->actionOptions();
+                    $tones = [
+                        'gray' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+                        'blue' => 'bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
+                        'emerald' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300',
+                    ];
+                @endphp
+
+                @foreach ($actions as $action)
+                    <button type="button" wire:click="selectAction('{{ $action['key'] }}')"
+                        wire:loading.attr="disabled"
+                        class="group flex w-full min-h-[56px] items-center gap-4 rounded-xl px-3 py-2.5 text-left
+                           transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-700/50
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                           disabled:cursor-not-allowed disabled:opacity-50">
+                        <span
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {{ $tones[$action['tone']] }}">
+                            <x-w-icon name="{{ $action['icon'] }}" class="h-5 w-5" aria-hidden="true" />
+                        </span>
+
+                        <span class="min-w-0 flex-1">
+                            <span
+                                class="block text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $action['title'] }}</span>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $action['desc'] }}</span>
+                        </span>
+
+                        <x-w-icon name="chevron-right" aria-hidden="true"
+                            class="h-4 w-4 shrink-0 text-gray-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </button>
+                @endforeach
+            </div>
+
+            {{-- Acción destructiva, separada --}}
+            @if ($this->canCancel())
+                <div class="pt-2">
+                <button type="button" wire:click="selectAction('cancel')" wire:loading.attr="disabled"
+                    class="group flex w-full min-h-[56px] items-center gap-4 rounded-xl px-3 py-2.5 text-left
+                       transition-colors duration-150 hover:bg-red-50 dark:hover:bg-red-900/20
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500
+                       disabled:cursor-not-allowed disabled:opacity-50">
+                    <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+                        <x-w-icon name="trash" class="h-5 w-5" aria-hidden="true" />
+                    </span>
+
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold text-red-700 dark:text-red-300">Cancelar pedido</span>
+                        <span class="block text-xs text-red-600/80 dark:text-red-300/70">Esta acción no se puede
+                            deshacer</span>
+                    </span>
+                </button>
+            </div>
+            @endif
+        </div>
+    </x-w-modal-card>
 </div>
