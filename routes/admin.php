@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('dashboard', 'dashboard')->name('dashboard');
+Route::view('dashboard', 'modules.admin.dashboard')->name('dashboard');
 
 Route::prefix('stikers')
     ->name('stikers.')

@@ -10,7 +10,7 @@
     <flux:sidebar sticky collapsible="mobile"
         class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.header>
-            <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+            <x-app-logo :sidebar="true" href="{{ route('customer.dashboard') }}" wire:navigate />
             <flux:sidebar.collapse class="lg:hidden" />
         </flux:sidebar.header>
 
@@ -20,9 +20,13 @@
                     :current="request()->routeIs('customer.dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="document-text" :href="route('customer.design-requests.index')"
+                    :current="request()->routeIs('customer.design-requests.*')" wire:navigate>
+                    {{ __('Solicitudes de diseño') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
             <flux:sidebar.group :heading="__('Orders')" class="grid">
-                <flux:sidebar.item icon="shopping-cart" :href="route('customer.purchase.create')"
+                <flux:sidebar.item icon="shopping-cart" :href="route('customer.purchase.index')"
                     :current="request()->routeIs('customer.purchase.*')" wire:navigate>
                     {{ __('Mis pedidos') }}
                 </flux:sidebar.item>

@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('dashboard', 'dashboardcustomer')->name('dashboard');
+Route::view('dashboard', 'modules.customer.dashboard')->name('dashboard');
 
-Route::view('catalog', 'modules.customer.catalog')->name('catalog');
+Route::get('catalog', fn () => redirect()->route('customer.purchase.create'))->name('catalog');
+
+Route::view('design-requests', 'modules.customer.design-requests')->name('design-requests.index');
 
 Route::prefix('purchase')
     ->name('purchase.')
@@ -15,7 +17,7 @@ Route::prefix('purchase')
         Route::view('/create', 'modules.customer.purchase.form')
             ->name('create');
 
-        Route::view('/{order}', 'modules.customer.purchase.form')
+        Route::view('/{order}', 'modules.customer.purchase.view')
             ->whereNumber('order')
-            ->name('edit');
+            ->name('show');
     });

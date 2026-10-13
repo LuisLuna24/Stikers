@@ -56,11 +56,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasOne(CustomerProfile::class);
     }
 
-    public function orderStatusChanges(): HasMany
-    {
-        return $this->hasMany(OrderStatusHistory::class, 'changed_by_user_id');
-    }
-
     public function receivedPayments(): HasMany
     {
         return $this->hasMany(Payment::class, 'received_by_user_id');

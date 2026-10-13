@@ -258,6 +258,18 @@
                         <p class="mt-2 text-xs text-zinc-500">
                             {{ $this->paymentStatusLabel($payment->status) }}{{ $payment->receivedBy ? ' · ' . $payment->receivedBy->name : '' }}
                         </p>
+                        @if ($payment->proof_url)
+                            @php
+                                $proofUrl = \Illuminate\Support\Str::startsWith($payment->proof_url, ['http://', 'https://'])
+                                    ? $payment->proof_url
+                                    : \Illuminate\Support\Facades\Storage::disk('public')->url($payment->proof_url);
+                            @endphp
+                            <a href="{{ $proofUrl }}" target="_blank" rel="noopener noreferrer"
+                                class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                                <flux:icon.paper-clip variant="mini" aria-hidden="true" />
+                                Ver comprobante
+                            </a>
+                        @endif
                 </div>@empty<p class="text-sm text-zinc-500 dark:text-zinc-400">Aún no hay pagos registrados.</p>
                     @endforelse
                 </div>

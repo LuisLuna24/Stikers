@@ -4,7 +4,6 @@ namespace App\Livewire\Modules\Admin\Sales;
 
 use App\Enums\OrderStatus;
 use App\Models\Order;
-use App\Models\OrderStatusHistory;
 use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -47,16 +46,9 @@ class Index extends Component
             return;
         }
 
-        DB::transaction(function () use ($order, $currentStatus, $nextStatus): void {
+        DB::transaction(function () use ($order, $nextStatus): void {
             $order->update(['status' => $nextStatus->value]);
 
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'from_status' => $currentStatus->value,
-                'to_status' => $nextStatus->value,
-                'changed_by_user_id' => auth()->id(),
-                'created_at' => now(),
-            ]);
         });
 
         Flux::toast(variant: 'success', heading: 'Estado actualizado', text: 'El estado del pedido fue actualizado.');
