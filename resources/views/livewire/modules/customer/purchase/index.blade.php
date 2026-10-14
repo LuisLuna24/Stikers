@@ -42,7 +42,60 @@
             </div>
         </div>
 
-        <div class="mt-5 overflow-x-auto">
+        <div class="mt-5 space-y-3 md:hidden">
+            @forelse ($orders as $order)
+                <a wire:key="customer-order-mobile-{{ $order->id }}"
+                    href="{{ route('customer.purchase.show', $order->id) }}"
+                    wire:navigate
+                    class="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-indigo-300 hover:bg-indigo-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-indigo-400/60 dark:hover:bg-indigo-500/5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="truncate font-semibold text-zinc-950 dark:text-white">{{ $order->order_number }}</p>
+                            <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ $order->requested_at?->format('d/m/Y · H:i') }}</p>
+                        </div>
+                        <span class="inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium {{ $this->statusClasses($order->status) }}">
+                            <span class="size-1.5 rounded-full {{ $this->statusDotClasses($order->status) }}" aria-hidden="true"></span>
+                            {{ $this->statusLabel($order->status) }}
+                        </span>
+                    </div>
+
+                    <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-700">
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Artículos</dt>
+                            <dd class="mt-1 font-medium text-zinc-900 dark:text-white">{{ number_format((int) $order->items_count) }} {{ $order->items_count === 1 ? 'línea' : 'líneas' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Total</dt>
+                            <dd class="mt-1 font-medium tabular-nums text-zinc-900 dark:text-white">${{ number_format((float) $order->total_amount, 2) }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mt-4 flex items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                        <span class="text-sm font-medium {{ (float) $order->balance_due > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                            {{ (float) $order->balance_due > 0 ? 'Saldo: $'.number_format((float) $order->balance_due, 2) : 'Liquidado' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                            Ver detalle
+                            <flux:icon.arrow-right variant="mini" aria-hidden="true" />
+                        </span>
+                    </div>
+                </a>
+            @empty
+                <div class="rounded-xl border border-dashed border-zinc-200 px-5 py-10 text-center dark:border-zinc-700">
+                    <flux:icon name="inbox" class="mx-auto size-8 text-zinc-400" aria-hidden="true" />
+                    <flux:text class="mt-2 font-medium">No hay pedidos que coincidan</flux:text>
+                    <flux:text>Prueba con otro filtro o crea un pedido nuevo.</flux:text>
+                </div>
+            @endforelse
+
+            @if ($orders->hasPages())
+                <div class="pt-2">
+                    {{ $orders->links() }}
+                </div>
+            @endif
+        </div>
+
+        <div class="mt-5 hidden overflow-x-auto md:block">
             <flux:table :paginate="$orders">
                 <flux:table.columns sticky>
                     <flux:table.column>Pedido</flux:table.column>

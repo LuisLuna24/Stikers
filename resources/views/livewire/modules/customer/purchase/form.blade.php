@@ -1,15 +1,45 @@
 <div x-data="{
         drawerOpen: false,
         toast: { show: false, message: '', timeoutId: null },
+        focusableSelector: `a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])`,
         showToast(message) {
             if (this.toast.timeoutId) clearTimeout(this.toast.timeoutId);
             this.toast.message = message;
             this.toast.show = true;
             this.toast.timeoutId = setTimeout(() => { this.toast.show = false; }, 4500);
+        },
+        openDrawer() {
+            this.toast.show = false;
+            this.drawerOpen = true;
+            this.$nextTick(() => this.$refs.cartClose?.focus());
+        },
+        closeDrawer() {
+            this.drawerOpen = false;
+            this.$nextTick(() => this.$refs.cartTrigger?.focus());
+        },
+        trapFocus(event) {
+            if (!this.drawerOpen || event.key !== 'Tab') return;
+
+            const focusable = [...this.$refs.cartDrawer.querySelectorAll(this.focusableSelector)]
+                .filter((element) => element.offsetParent !== null);
+
+            if (!focusable.length) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         }
     }"
     x-on:notify-toast.window="showToast($event.detail.message)"
-    x-on:keydown.escape.window="drawerOpen = false"
+    x-on:keydown.escape.window="closeDrawer()"
+    x-on:keydown.tab.window="trapFocus($event)"
     class="min-h-dvh text-zinc-900 dark:text-zinc-100">
 
     <div class="mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -28,7 +58,8 @@
             </div>
 
             <button type="button"
-                x-on:click="drawerOpen = true"
+                x-on:click="openDrawer()"
+                x-ref="cartTrigger"
                 class="relative inline-flex min-h-[44px] items-center justify-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:border-indigo-400 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:text-indigo-300 dark:focus-visible:ring-offset-zinc-950"
                 aria-label="Abrir carrito con {{ $cartItemCount }} productos">
                 <flux:icon.shopping-bag class="size-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
@@ -80,6 +111,7 @@
                             selectedFinishId: @js($firstVariant['finish_id']),
                             quantity: @js($firstVariant['minimum_quantity']),
                             added: false,
+                            imageFailed: false,
                             quantityErrorMessage: '',
 
                             formatPrice(value) {
@@ -129,6 +161,7 @@
                                 return this.catalog.variants.some(item => Number(item.finish_id) === Number(finishId) && Number(item.size_id) === Number(this.selectedSizeId));
                             },
                             selectSize(sizeId) {
+                                this.imageFailed = false;
                                 if (this.sizeAvailable(sizeId)) {
                                     this.selectedSizeId = sizeId;
                                 } else {
@@ -141,6 +174,7 @@
                                 this.syncQuantity();
                             },
                             selectFinish(finishId) {
+                                this.imageFailed = false;
                                 if (this.finishAvailable(finishId)) {
                                     this.selectedFinishId = finishId;
                                 } else {
@@ -271,19 +305,20 @@
 
                         <!-- Preview de imagen y proporciones dinámicas -->
                         <div class="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-2xl bg-zinc-100 p-6 transition-[aspect-ratio] duration-300 dark:bg-zinc-800/80 sm:aspect-[5/3]">
-                            <img x-show="selectedImage()"
+                            <img x-show="selectedImage() && !imageFailed"
                                 x-bind:src="selectedImage()"
                                 x-bind:alt="`${selectedSize()?.name || ''} ${selectedFinish()?.name || ''} de ${@js($design->name)}`"
                                 loading="lazy"
                                 width="800"
                                 height="800"
                                 x-bind:style="imageScaleStyle()"
+                                x-on:error="imageFailed = true"
                                 class="max-h-full max-w-full object-contain transition-transform duration-300 ease-out motion-reduce:transition-none" />
 
-                            <div x-show="!selectedImage()"
-                                class="flex size-full items-center justify-center text-zinc-400 dark:text-zinc-600">
+                            <div x-show="!selectedImage() || imageFailed"
+                                class="flex size-full flex-col items-center justify-center gap-2 text-center text-zinc-400 dark:text-zinc-500">
                                 <flux:icon.photo class="size-14" aria-hidden="true" />
-                                <span class="sr-only">Sin vista previa disponible</span>
+                                <span class="text-xs font-medium">Vista previa no disponible</span>
                             </div>
 
                             <!-- Disponibilidad sutil superior -->
@@ -595,7 +630,7 @@
             <p class="font-medium text-zinc-950 dark:text-white" x-text="toast.message"></p>
         </div>
         <button type="button"
-            x-on:click="drawerOpen = true; toast.show = false"
+            x-on:click="openDrawer()"
             class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-indigo-400 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-300">
             Ver carrito
         </button>
@@ -610,7 +645,7 @@
     <!-- Drawer lateral del carrito -->
     <div x-cloak x-show="drawerOpen" class="fixed inset-0 z-50" role="presentation">
         <button type="button"
-            x-on:click="drawerOpen = false"
+            x-on:click="closeDrawer()"
             class="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm dark:bg-zinc-950/60"
             aria-label="Cerrar carrito"></button>
 
@@ -621,7 +656,8 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+            x-ref="cartDrawer"
+            class="absolute inset-y-0 right-0 z-[60] flex w-full max-w-md flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
             role="dialog" aria-modal="true" aria-labelledby="cart-heading">
 
             <div class="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
@@ -637,7 +673,8 @@
                     </p>
                 </div>
                 <button type="button"
-                    x-on:click="drawerOpen = false"
+                    x-on:click="closeDrawer()"
+                    x-ref="cartClose"
                     class="inline-flex size-11 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
                     aria-label="Cerrar carrito">
                     <flux:icon.x-mark class="size-5" aria-hidden="true" />
@@ -710,7 +747,7 @@
                             Selecciona un diseño y configura su tamaño, acabado y cantidad para empezar.
                         </p>
                         <button type="button"
-                            x-on:click="drawerOpen = false"
+                            x-on:click="closeDrawer()"
                             class="mt-5 inline-flex min-h-[44px] items-center rounded-xl px-4 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-500/10">
                             Elegir diseños
                         </button>

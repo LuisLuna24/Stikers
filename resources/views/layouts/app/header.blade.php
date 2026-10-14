@@ -25,7 +25,7 @@
                     {{ __('Solicitudes de diseño') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            <flux:sidebar.group :heading="__('Orders')" class="grid">
+            <flux:sidebar.group :heading="__('Pedidos')" class="grid">
                 <flux:sidebar.item icon="shopping-cart" :href="route('customer.purchase.index')"
                     :current="request()->routeIs('customer.purchase.*')" wire:navigate>
                     {{ __('Mis pedidos') }}
