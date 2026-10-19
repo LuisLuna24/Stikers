@@ -34,6 +34,10 @@ Route::get('/catalogo', function () {
 
 Route::get('/catalogs', fn () => redirect()->route('catalogs'));
 
+Route::get('/contacto', function () {
+    return view('contact');
+})->name('contact');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
