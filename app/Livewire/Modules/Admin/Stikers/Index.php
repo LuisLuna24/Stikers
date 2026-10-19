@@ -57,7 +57,7 @@ class Index extends Component
                 $query->where('name', 'like', "%{$this->search}%")
                     ->orWhere('sku', 'like', "%{$this->search}%");
             }))
-            ->orderBy('name')
+            ->orderBy('sku')
             ->paginate(10);
 
         return view('livewire.modules.admin.stikers.index', compact('designs'));

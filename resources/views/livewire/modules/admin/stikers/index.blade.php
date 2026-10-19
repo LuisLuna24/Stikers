@@ -15,8 +15,8 @@
 
     <flux:table :paginate="$designs" bleed>
         <flux:table.columns sticky>
-            <flux:table.column>Diseño</flux:table.column>
             <flux:table.column>SKU</flux:table.column>
+            <flux:table.column>Diseño</flux:table.column>
             <flux:table.column>Combinaciones activas</flux:table.column>
             <flux:table.column>Estatus</flux:table.column>
             <flux:table.column></flux:table.column>
@@ -24,6 +24,7 @@
         <flux:table.rows>
             @forelse ($designs as $design)
                 <flux:table.row :key="$design->id">
+                    <flux:table.cell>{{ $design->sku }}</flux:table.cell>
                     <flux:table.cell>
                         <div class="flex items-center gap-3">
                             @if ($design->preview_image_url)
@@ -33,7 +34,6 @@
                             <span class="font-medium">{{ $design->name }}</span>
                         </div>
                     </flux:table.cell>
-                    <flux:table.cell>{{ $design->sku }}</flux:table.cell>
                     <flux:table.cell>{{ $design->active_variants_count }}</flux:table.cell>
                     <flux:table.cell class="py-0">
                         <div class="flex items-center gap-3">

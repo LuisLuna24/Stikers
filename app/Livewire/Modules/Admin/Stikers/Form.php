@@ -31,8 +31,6 @@ class Form extends Component
 
     public $vector_file = null;
 
-    public ?string $vector_file_url = null;
-
     public $preview_image = null;
 
     public string $current_preview_image_url = '';
@@ -54,6 +52,8 @@ class Form extends Component
     public function mount(?int $id = null): void
     {
         if ($id === null) {
+            $this->sku = Design::generateNextSku();
+
             return;
         }
 
@@ -64,7 +64,6 @@ class Form extends Component
         $this->name = $design->name;
         $this->slug = $design->slug;
         $this->description = $design->description ?? '';
-        $this->vector_file_url = $design->vector_file_url;
         $this->current_preview_image_url = $design->preview_image_url
             ? (Str::startsWith($design->preview_image_url, ['http://', 'https://'])
                 ? $design->preview_image_url
@@ -180,12 +179,15 @@ class Form extends Component
 
     private function persist(bool $publish): void
     {
+        if (blank($this->sku)) {
+            $this->sku = Design::generateNextSku();
+        }
+
         $rules = [
             'sku' => ['required', 'string', 'max:60', Rule::unique('designs', 'sku')->ignore($this->designId)],
             'name' => ['required', 'string', 'max:180'],
             'slug' => ['required', 'string', 'max:200', 'alpha_dash', Rule::unique('designs', 'slug')->ignore($this->designId)],
             'description' => ['nullable', 'string'],
-            'vector_file' => ['nullable', 'file', 'mimes:svg,pdf,ai,eps', 'max:20480'],
             'preview_image' => [$publish && ! $this->hasExistingPreview() ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'variants' => ['nullable', 'array'],
             'variants.*.sticker_size_id' => ['nullable', 'integer', 'exists:sticker_sizes,id'],
@@ -340,7 +342,10 @@ class Form extends Component
             text: $publish ? 'El diseño ya está visible en el catálogo.' : 'El diseño se guardó como inactivo.',
         );
 
-        $this->redirectRoute('admin.stikers.index', navigate: true);
+
+        $this->reset();
+        $this->resetErrorBag();
+        $this->sku = Design::generateNextSku();
     }
 
     private function hasExistingPreview(): bool

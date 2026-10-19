@@ -28,15 +28,8 @@
             </div>
 
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <x-w-input wire:model.live="sku" label="SKU" placeholder="Ej. STK-001" />
+                <x-w-input wire:model.live="sku" label="SKU" placeholder="Ej. TWSK-0005" />
                 <x-w-input wire:model.live="name" label="Nombre" placeholder="Ej. Logo de temporada" />
-                <div class="md:col-span-2">
-                    <x-w-input wire:model="vector_file" type="file" accept=".svg,.pdf,.ai,.eps" label="Archivo vectorial (opcional)" />
-                    @if ($vector_file_url)
-                        <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Ya existe un archivo vectorial cargado. Solo selecciona otro si deseas reemplazarlo.</p>
-                    @endif
-                    @error('vector_file') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                </div>
                 <div class="md:col-span-2">
                     <x-w-input wire:model="preview_image" type="file" accept="image/jpeg,image/png,image/webp" label="Imagen de vista previa" />
                     @if ($preview_image)

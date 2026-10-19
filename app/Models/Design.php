@@ -29,4 +29,26 @@ class Design extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public static function generateNextSku(): string
+    {
+        $lastSku = static::query()
+            ->where('sku', 'like', 'TWSK-%')
+            ->orderByDesc('id')
+            ->value('sku');
+
+        $nextNumber = 1;
+        if ($lastSku && preg_match('/TWSK-(\d+)/', $lastSku, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        } else {
+            $maxId = (int) static::query()->max('id');
+            $nextNumber = $maxId + 1;
+        }
+
+        while (static::query()->where('sku', sprintf('TWSK-%04d', $nextNumber))->exists()) {
+            $nextNumber++;
+        }
+
+        return sprintf('TWSK-%04d', $nextNumber);
+    }
 }
